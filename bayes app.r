@@ -18,7 +18,7 @@ ui <-
 
               tabPanel("One-sample t-test and/or paired t-test",
                        sidebarLayout(sidebarPanel(
-                         radioButtons("mode", label = p(strong("BFDA:")), choices = c("A Priori","Post Hoc (or given certain N)"), inline = TRUE),
+                         radioButtons("mode", label = p(strong("BFDA:")), choices = c("for sample size determination","for a fixed sample size"), inline = TRUE),
                          
                          
                          p(strong("Specify Alternative hypothese")),
@@ -70,12 +70,12 @@ ui <-
                          sliderInput("de", p(strong("Specify the bound of compelling evidence BF:")), min=1,max = 20,value = 3),
                         
                          conditionalPanel(
-                           condition = "input.mode == 'A Priori'",
+                           condition = "input.mode == 'for sample size determination'",
                            sliderInput("pro", p(strong("Specify the desired probability of compelling evidence")),
                                        min =.5, max = .99, value = .8,step = .01)),
                          
                          conditionalPanel(
-                           condition = "input.mode == 'Post Hoc (or given certain N)'",
+                           condition = "input.mode == 'for a fixed sample size'",
                            numericInput("N", p(strong("Sample Size")),
                                         value = 2, min = 2, max = 100000, step = 1))
                          
@@ -125,7 +125,9 @@ ui <-
                          
                        actionButton("run", label = "Run"),
                        p("Note: Error would occur if the required sample size is more than 100,000"),
-                          ),
+                          
+                       p("Please report any issues to the developer and the maintainer of the app, T.K. Wong, at the email address: t.k.wong3004@gmail.com ")),
+                      
                        mainPanel(
                          fluidRow(
                            column(6, plotOutput("plot1")),
@@ -138,14 +140,14 @@ ui <-
               ),
               tabPanel("Independent t-test(equal variance)",
                sidebarLayout(sidebarPanel(
-                 radioButtons("mode2", label = p(strong("BFDA:")), choices = c("A Priori","Post Hoc (or given certain N)"), inline = TRUE),
+                 radioButtons("mode2", label = p(strong("BFDA:")), choices = c("for sample size determination","for a fixed sample size"), inline = TRUE),
                  p(strong("Specify Alternative hypothese")),
                  radioButtons("rb2", label = h4(HTML(paste0("H", tags$sub("1"), " :"))), choices = c("δ ≠ 0","δ > 0", "δ < 0"), inline = TRUE),
                 
 
                  conditionalPanel(
                    condition = "input.rb2 == 'δ ≠ 0'||input.rb2 == 'δ > 0'||input.rb2 == 'δ < 0'",
-                   radioButtons("model2", label = p(strong("Specify prior for δ under H₁:")), choices = c("Cauchy","Normal", "t-student","Non-local"), inline = TRUE)),
+                   radioButtons("model2", label = p(strong("Specify analysis prior for δ under H₁:")), choices = c("Cauchy","Normal", "t-student","Non-local"), inline = TRUE)),
                  
                  conditionalPanel(
                    condition = "(input.model2 == 'Cauchy') && (input.rb2 == 'δ ≠ 0'||input.rb2 == 'δ > 0'||input.rb2 == 'δ < 0')",
@@ -181,7 +183,7 @@ ui <-
                        sliderInput("s_nlp2", "scale (mode = location ± scale * √2 ): ", value = .045,max=1,min=.045,ticks = FALSE,step = .001))
                  ),
                  conditionalPanel(
-                   condition = "input.mode2 == 'Post Hoc (or given certain N)'",
+                   condition = "input.mode2 == 'for a fixed sample size'",
                    p(strong("Specify sample size per group")),
                    
                    div(style="display: inline-block; width: 100px;",
@@ -193,7 +195,7 @@ ui <-
                    
                    ),
                  conditionalPanel(
-                   condition = "input.mode2 == 'A Priori'",
+                   condition = "input.mode2 == 'for sample size determination'",
                    sliderInput("r2", p(strong("Specify the ratio of sample sizes in two groups N2/N1:")), 
                                                                        min=1,max = 10,value = 1)
                    ),
@@ -202,7 +204,7 @@ ui <-
                  
                  sliderInput("de2", p(strong("Specify the bound of compelling evidence BF:")), min=1,max = 20,value = 3),
                  conditionalPanel(
-                   condition = "input.mode2 == 'A Priori'",
+                   condition = "input.mode2 == 'for sample size determination'",
                  sliderInput("pro2", p(strong("Specify the desired probability of compelling evidence")),
                              min =.5, max = .99, value = .8,step = .01)),
                  
@@ -249,6 +251,7 @@ ui <-
                  
                  actionButton("run2", label = "Run"),
                  p("Note: Error would occur if the required sample size is more than 100,000"),
+                 p("Please report any issues to the developer and the maintainer of the app, T.K. Wong, at the email address: t.k.wong3004@gmail.com ")
                ),
                mainPanel(
                  fluidRow(
@@ -298,8 +301,8 @@ server <- function(input, output, session) {
       
       N <- input$N
       mode <- switch(input$mode,
-                     "A Priori" = 1,
-                     "Post Hoc (or given certain N)" = 0)
+                     "for sample size determination" = 1,
+                     "for a fixed sample size" = 0)
       hypothesis_d =hypothesis
       
       model_d <- switch(input$model_daa,
@@ -551,8 +554,8 @@ server <- function(input, output, session) {
                             "No" = 0
       )
       mode2 <- switch(input$mode2,
-                     "A Priori" = 1,
-                     "Post Hoc (or given certain N)" = 0)
+                     "for sample size determination" = 1,
+                     "for a fixed sample size" = 0)
       n1 = input$n1
       n2 = input$n2
       
