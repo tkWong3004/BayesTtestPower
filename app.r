@@ -16,7 +16,7 @@ ui <-
               "Sample Size determination for Bayesian",
               
 
-              tabPanel("One-sample t-test and/or paired t-test testing",
+              tabPanel("One-sample t-test and/or paired t-test",
                        sidebarLayout(sidebarPanel(
                          radioButtons("mode", label = p(strong("BFDA:")), choices = c("for sample size determination","for a fixed sample size"), inline = TRUE),
                          
