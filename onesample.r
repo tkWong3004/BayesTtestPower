@@ -582,7 +582,7 @@ bf10_t <-function(D =3,df, target,model = "NA",location =0,scale=.707,dff = 1, h
     #sprintf("BF10 = %.0f when t = %.3f or %.3f ",D,BF_D[1],BF_D[2])
   }
   par(mfrow = c(1, 2))
-  plot(tt,log10(BF10),xlab= "t-value",type="l", ylab = expression("logarithm of BF"[10]),main =   main,frame.plot = FALSE)
+  plot(tt,log(BF10),xlab= "t-value",type="l", ylab = expression("logarithm of BF"[10]),main =   main,frame.plot = FALSE)
   abline(v = BF_D)
   
   max_BF = 1/BF10_one_sample(0,df=df,model=model,location=location,scale=scale,dff=dff, hypothesis ="!=" )
@@ -598,7 +598,7 @@ bf10_t <-function(D =3,df, target,model = "NA",location =0,scale=.707,dff = 1, h
       main =  bquote(bold("BF"[0][1]~"="~.(D) ~"when t = "~.(format(BF_D[1], digits = 4))~"or"~.(format(BF_D[2], digits = 4))))
       #sprintf("BF01 = %.0f when t = %.3f or %.3f ",D,BF_D[1],BF_D[2])
     }}
-  plot(tt,log10(1/BF10),xlab= "t-value",type="l",main =   main,frame.plot = FALSE,ylab = bquote("logarithm of BF"[0][1]))
+  plot(tt,log(1/BF10),xlab= "t-value",type="l",main =   main,frame.plot = FALSE,ylab = bquote("logarithm of BF"[0][1]))
   
   if (length(BF_D) != 0 ){
     abline(v = BF_D)}
