@@ -499,9 +499,9 @@ Table <- function(D,target,model,location,scale,dff, hypothesis,
 prior_plot <-function(D =3,target,model = "NA",location =0,scale=.707,dff = 1, hypothesis,model_d,location_d,scale_d,dff_d=1, hypothesis_d,de_an_prior){
   par(mfrow = c(1, 1))
   bound  <- switch(hypothesis,
-                   ">" = c(a = 0, b = 4),
-                   "<" = c(a = -4, b = 0),
-                   "!=" = c(a = -4, b = 4)
+                   ">" = c(a = 0, b = 5),
+                   "<" = c(a = -5, b = 0),
+                   "!=" = c(a = -5, b = 5)
   )
   tt= seq(bound[1],bound[2],.01)
   
@@ -569,7 +569,7 @@ if (de_an_prior ==0){
 
 bf10_t <-function(D =3,df, target,model = "NA",location =0,scale=.707,dff = 1, hypothesis ){
   
-  tt= seq(from = -4,to = 4,.2)
+  tt= seq(from = -5,to = 5,.2)
   BF_D = BF_bound_10(D = D, df =df,model = model,location =location,scale=scale,dff = dff, hypothesis)
   BF10 = BF10_one_sample(tt,df,model ,location,scale,dff,hypothesis)
   
@@ -582,25 +582,36 @@ bf10_t <-function(D =3,df, target,model = "NA",location =0,scale=.707,dff = 1, h
     #sprintf("BF10 = %.0f when t = %.3f or %.3f ",D,BF_D[1],BF_D[2])
   }
   par(mfrow = c(1, 2))
-  plot(tt,log(BF10),xlab= "t-value",type="l", ylab = expression("logarithm of BF"[10]),main =   main,frame.plot = FALSE)
+  plot(tt,log10(BF10),xlab= "t-value",type="l", ylab = expression("logarithm of BF"[10]),main =   main,frame.plot = FALSE,xaxt = "n")
   abline(v = BF_D)
+  axis(1, c(-5,5))
+  if (length(BF_D) != 0 ){
+  axis(1, round(BF_D,2))}
   
   max_BF = 1/BF10_one_sample(0,df=df,model=model,location=location,scale=scale,dff=dff, hypothesis ="!=" )
   BF_D = BF_bound_01(D = D, df =df,model = model,location =location,scale=scale,dff = dff, hypothesis)
+
+  
+  
+  plot(tt,log10(1/BF10),xlab= "t-value",type="l",main = "",frame.plot = FALSE,ylab = bquote("logarithm of BF"[0][1]),xaxt = "n")
+  axis(1, c(-5,5))
   if (any(hypothesis == "!=" & max_BF<D |BF_D == "bound cannot be found" ) ) {
     main = bquote(bold("It is impossible to have BF"[0][1]~"="~.(D)))
+    title(main = main)
     #sprintf("It is impossible to have BF01 = %.3f ",D)
   } else      {
+    abline(v = BF_D)
+    axis(1, round(BF_D,2))
     if (length(BF_D) == 1){
       main =  bquote(bold("BF"[0][1]~"="~.(D) ~"when t = "~.(format(BF_D, digits = 4))))
-      #sprintf("BF01 = %.0f when t = %.3f ",D,BF_D)
+      title(main = main)
     } else {
       main =  bquote(bold("BF"[0][1]~"="~.(D) ~"when t = "~.(format(BF_D[1], digits = 4))~"or"~.(format(BF_D[2], digits = 4))))
-      #sprintf("BF01 = %.0f when t = %.3f or %.3f ",D,BF_D[1],BF_D[2])
+      title(main = main)
     }}
-  plot(tt,log(1/BF10),xlab= "t-value",type="l",main =   main,frame.plot = FALSE,ylab = bquote("logarithm of BF"[0][1]))
+
+
   
-  if (length(BF_D) != 0 ){
-    abline(v = BF_D)}
+
   
 }

@@ -3,8 +3,8 @@ library(shiny)
 library(Rcpp)
 library(BH)
 
-sourceCpp("boost_noncentralt.cpp")
-sourceCpp("pt.cpp")
+sourceCpp("boost_noncentralt.cpp", cacheDir = "tmp_cache")
+sourceCpp("pt.cpp", cacheDir = "tmp_cache")
 source("onesample.r")
 source("twosample.r")
 
@@ -71,7 +71,7 @@ ui <-
                         
                          conditionalPanel(
                            condition = "input.mode == 'for sample size determination'",
-                           sliderInput("pro", p(strong("Specify the desired probability of compelling evidence")),
+                           sliderInput("pro", p(strong("Specify the desired probability of true positive evidence")),
                                        min =.5, max = .99, value = .8,step = .01)),
                          
                          conditionalPanel(
@@ -205,7 +205,7 @@ ui <-
                  sliderInput("de2", p(strong("Specify the bound of compelling evidence BF:")), min=1,max = 20,value = 3),
                  conditionalPanel(
                    condition = "input.mode2 == 'for sample size determination'",
-                 sliderInput("pro2", p(strong("Specify the desired probability of compelling evidence")),
+                 sliderInput("pro2", p(strong("Specify the desired probability of true positive evidence")),
                              min =.5, max = .99, value = .8,step = .01)),
                  
                  radioButtons("daa2", label = p(strong("Design prior is the same as analysis prior :")), choices = c("Yes","No"), inline = TRUE),

@@ -476,7 +476,7 @@ Table_two <- function(D,r,target,model,location,scale,dff, hypothesis, model_d,l
 
 bf10_two <-function(D ,n1,r, target,model,location ,scale,dff = 1, hypothesis ){
   
-  tt= seq(from = -4,to = 4,.1)
+  tt= seq(from = -5,to = 5,.1)
   #df = N_finder(D,target ,model,location,scale,dff,hypothesis)
   BF_D = BF_bound_10_two(D,n1,r,model ,location ,scale ,dff ,hypothesis )
   BF10 = BF10_two_sample(tt,n1,r,model ,location,scale,dff,hypothesis)
@@ -490,27 +490,30 @@ bf10_two <-function(D ,n1,r, target,model,location ,scale,dff = 1, hypothesis ){
     #sprintf("BF10 = %.0f when t = %.3f or %.3f ",D,BF_D[1],BF_D[2])
   }
   par(mfrow = c(1, 2))
-  plot(tt,log(BF10),xlab= "t-value",type="l", ylab = expression("logarithm of BF"[10]),main =   main,frame.plot = FALSE)
-  abline(v = BF_D)
+  plot(tt,log(BF10),xlab= "t-value",type="l", ylab = expression("logarithm of BF"[10]),main =   main,frame.plot = FALSE,xaxt = "n")
+    abline(v = BF_D)
+  axis(1, c(-5,5))
+  if (length(BF_D) != 0 ){
+    axis(1, round(BF_D,2))}
   
   max_BF = 1/BF10_two_sample(0, n1,r ,model ,location ,scale ,dff ,hypothesis )
   BF_D = BF_bound_01_two(D , n1,r,model ,location ,scale,dff , hypothesis)
+ plot(tt,log10(1/BF10),xlab= "t-value",type="l",main = "",frame.plot = FALSE,ylab = bquote("logarithm of BF"[0][1]),xaxt = "n")
+  axis(1, c(-5,5))
   if (any(hypothesis == "!=" & max_BF<D |BF_D == "bound cannot be found" ) ) {
     main = bquote(bold("It is impossible to have BF"[0][1]~"="~.(D)))
+    title(main = main)
     #sprintf("It is impossible to have BF01 = %.3f ",D)
   } else      {
+    abline(v = BF_D)
+    axis(1, round(BF_D,2))
     if (length(BF_D) == 1){
       main =  bquote(bold("BF"[0][1]~"="~.(D) ~"when t = "~.(format(BF_D, digits = 4))))
-      #sprintf("BF01 = %.0f when t = %.3f ",D,BF_D)
+      title(main = main)
     } else {
       main =  bquote(bold("BF"[0][1]~"="~.(D) ~"when t = "~.(format(BF_D[1], digits = 4))~"or"~.(format(BF_D[2], digits = 4))))
-      #sprintf("BF01 = %.0f when t = %.3f or %.3f ",D,BF_D[1],BF_D[2])
+      title(main = main)
     }}
-  plot(tt,log(1/BF10),xlab= "t-value",type="l",main =   main,frame.plot = FALSE,ylab = bquote("logarithm of BF"[0][1]))
-  
-  if (length(BF_D) != 0 ){
-    abline(v = BF_D)}
-  
 }
 
 
