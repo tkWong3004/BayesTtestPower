@@ -13,7 +13,7 @@ source("twosample.r")
 ## shiny app
 ui <- 
   navbarPage( id = "id",
-              "Sample Size determination for Bayesian",
+              "Bayes Factor Design Analysis for Bayesian t-tests",
               
 
               tabPanel("One-sample t-test and/or paired t-test",
