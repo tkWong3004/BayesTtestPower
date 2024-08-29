@@ -6,11 +6,11 @@ library(rootSolve)
 library(Rcpp)
 library(BH)
 library(bfpwr)
+library(tikzDevice)  
 sourceCpp("boost_noncentralt.cpp", cacheDir = "tmp_cache")
 sourceCpp("pt.cpp", cacheDir = "tmp_cache")               
 source("onesample.r")
-source("twosample.r")
-library(tikzDevice)   
+source("twosample.r") 
 ####################### Figure 1 
 # panel 1
 # Specification
