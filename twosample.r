@@ -131,7 +131,13 @@ pro_compelling_BF_two<-function(t,n1,r,model ,location ,scale,dff , hypothesis )
     t=0
     return(t)
   }
-  
+  if (model == "Point"){
+    pro = switch(hypothesis,
+                 "!="=  pnct(t[t>0],df,ncp = location *constant,lower  = F) + pnct(t[t<0],df,ncp = location *sqrt(df+1),lower  = T),
+                 ">" = pnct(t,df,ncp = location *constant,lower  = F),
+                 "<" = pnct(t,df,ncp = location *constant,lower  = T))
+    return(pro)
+  }
   bound  <- switch(hypothesis,
                    ">" = c(a = 0, b = Inf),
                    "<" = c(a = -Inf, b = 0),
@@ -276,7 +282,13 @@ false_negative_BF_two<-function(t,n1,r,model ,location ,scale,dff , hypothesis )
   if (any(t == "bound cannot be found")){
     return(t)
   }
-  
+  if (model == "Point"){
+    pro = switch(hypothesis,
+                 "!="=  pnct(t[t>0],df,ncp = location *constant,lower  = T) - pnct(t[t<0],df,ncp = location *sqrt(df+1),lower  = T),
+                 ">" = pnct(t,df,ncp = location *constant,lower  = T),
+                 "<" = pnct(t,df,ncp = location *constant,lower  = F))
+    return(pro)
+  }
   bound  <- switch(hypothesis,
                    ">" = c(a = 0, b = Inf),
                    "<" = c(a = -Inf, b = 0),
@@ -516,4 +528,39 @@ bf10_two <-function(D ,n1,r, target,model,location ,scale,dff = 1, hypothesis ){
     }}
 }
 
+Power_t2<-function(D,r,model,location,scale,dff, hypothesis,
+                   model_d,location_d,scale_d,dff_d, de_an_prior,N,n2,mode,target){
+  smin = 2
+  smax =N*1.2
+  sdf = seq(smin,smax , by = (smax-smin)/30)
+  power =  array(NA, dim = c(length(sdf)))
+  
+  for ( i in 1:length(sdf)){
+    t = BF_bound_10_two(D ,sdf[i],r,model ,location ,scale  ,dff ,hypothesis )
+    power[i] = switch(de_an_prior,
+                      "1" = pro_compelling_BF_two(t,sdf[i],r,model  ,location  ,scale,dff, hypothesis),
+                      "0" = pro_compelling_BF_two(t,sdf[i],r,model_d  ,location_d  ,scale_d,dff_d, hypothesis))
+    
+    
+  }
+  if (mode == 1){
+    NN = sdf+sdf*r
+  }
+  if (mode == 0){
+    NN = sdf+sdf*(n2/N)
+  }
+  
+  plot(NN,power,type="l",main = "",frame.plot = FALSE,xlab = "Total sample size (N1+N2)", ylab = "Probability of True positive evidence", 
+       ylim = c(0,1) )
+  if ( mode == 1 ){
+  abline(v = N+N*r, col = "gray", lty = 2)
+  
+  # Add horizontal dotted gray line at y = 5
+  abline(h = target, col = "gray", lty = 2)
+  }
+  
+  
+  
+  
+}
 

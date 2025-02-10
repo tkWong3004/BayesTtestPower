@@ -50,7 +50,7 @@ ml_H1_one_sample <-function(t,df,model ,location,scale,dff , hypothesis ){
 
     error = 1e-8
     if (model == "NLP" & scale <.3 ){
-      error = 1e-14
+      error = 1e-8
     }
     x[i]= integrate(int,lower = bound[1],upper = bound[2], rel.tol=error,stop.on.error = F)$value
     
@@ -169,6 +169,15 @@ pro_compelling_BF<-function(t,df,model ,location ,scale,dff , hypothesis ){
     return(t)
   }
   
+  if (model == "Point"){
+    pro = switch(hypothesis,
+                 "!="= pnct(t[t<0],df,ncp = location *sqrt(df+1),lower  = T)+pnct(t[t>0],df,ncp = location *sqrt(df+1),lower  = F),
+                 ">" = pnct(t,df,ncp = location *sqrt(df+1),lower  = F),
+                 "<" = pnct(t,df,ncp = location *sqrt(df+1),lower  = T))
+    return(pro)
+  }
+  
+  
   bound  <- switch(hypothesis,
                    ">" = c(a = 0, b = Inf),
                    "<" = c(a = -Inf, b = 0),
@@ -272,7 +281,13 @@ false_negative_BF<-function(t,df,model ,location ,scale,dff , hypothesis ){
   if (any(t == "bound cannot be found")){
     return(t)
   }
-  
+  if (model == "Point"){
+    pro = switch(hypothesis,
+                 "!="=  pnct(t[t>0],df,ncp = location *sqrt(df+1),lower  = T) - pnct(t[t<0],df,ncp = location *sqrt(df+1),lower  = T),
+                 ">" = pnct(t,df,ncp = location *sqrt(df+1),lower  = T),
+                 "<" = pnct(t,df,ncp = location *sqrt(df+1),lower  = F))
+    return(pro)
+  }
   bound  <- switch(hypothesis,
                    ">" = c(a = 0, b = Inf),
                    "<" = c(a = -Inf, b = 0),
@@ -494,7 +509,6 @@ Table <- function(D,target,model,location,scale,dff, hypothesis,
     }
   return(table)
 }
-
 # plot for the selected prior 
 prior_plot <-function(D =3,target,model = "NA",location =0,scale=.707,dff = 1, hypothesis,model_d,location_d,scale_d,dff_d=1, hypothesis_d,de_an_prior){
   par(mfrow = c(1, 1))
@@ -504,7 +518,6 @@ prior_plot <-function(D =3,target,model = "NA",location =0,scale=.707,dff = 1, h
                    "!=" = c(a = -5, b = 5)
   )
   tt= seq(bound[1],bound[2],.01)
-  
   
   
     bound  <- switch(hypothesis,
@@ -519,11 +532,6 @@ prior_plot <-function(D =3,target,model = "NA",location =0,scale=.707,dff = 1, h
                            "t-distribution" = integrate(function(delta)tstude(delta,location,scale,dff),lower = bound[1],upper = bound[2])$value
   )
   
-  
-  
-  
-  
-  
   prior_DELTA = NA
   prior_DELTA = switch(model,
                        "Cauchy" = tstude(tt,location,scale,1)/normalization,
@@ -535,6 +543,7 @@ prior_plot <-function(D =3,target,model = "NA",location =0,scale=.707,dff = 1, h
   plot(tt,prior_DELTA,xlab= bquote(bold(delta)),ylab= "density",type = "l",main  = bquote(bold("prior distribution on "~delta~" under the alternative hypothesis")),frame.plot = FALSE)
 if (de_an_prior ==0){
   
+  if (model_d != "Point"){
   normalization_d  <- switch(model_d,
                            "Cauchy" = integrate(function(delta) tstude(delta,location_d,scale_d,1),lower = bound[1],upper = bound[2])$value,
                            "Normal" = integrate(function(delta)dnorm(delta,location_d,scale_d),lower = bound[1],upper = bound[2])$value,
@@ -550,6 +559,12 @@ if (de_an_prior ==0){
   plot(tt,prior_DELTA,xlab= bquote(bold(delta)),ylim = c(0,max(max(prior_DELTA_D),max(prior_DELTA))),ylab= "density",type = "l",main  = bquote(bold("prior distribution on "~delta~" under the alternative hypothesis")),frame.plot = FALSE)
 
   lines(tt,prior_DELTA_D ,lty = 2)
+
+  } else{
+    plot(tt,prior_DELTA,xlab= bquote(bold(delta)),ylim = c(0,max(prior_DELTA)),ylab= "density",type = "l",main  = bquote(bold("prior distribution on "~delta~" under the alternative hypothesis")),frame.plot = FALSE)
+    arrows(x0=location_d, y0=0, x1=location_d, y1=max(prior_DELTA), length=0.2, code=2, col="black", lwd=1,,lty = 2)
+  }
+  
   legend("topright", 
          legend = c("Analysis prior", "Design prior"), 
          lty = c(1, 2), 
@@ -557,12 +572,6 @@ if (de_an_prior ==0){
          bty = "n") 
   
 }
-  
-  
-  
-  
-  
-  
   }
 
 # plots for showing the relationship between BF and t-values 
@@ -609,9 +618,32 @@ bf10_t <-function(D =3,df, target,model = "NA",location =0,scale=.707,dff = 1, h
       main =  bquote(bold("BF"[0][1]~"="~.(D) ~"when t = "~.(format(BF_D[1], digits = 4))~"or"~.(format(BF_D[2], digits = 4))))
       title(main = main)
     }}
-
-
   
+}
 
+Power_t1<-function(D,model,location,scale,dff, hypothesis,
+                   model_d,location_d,scale_d,dff_d, de_an_prior,N,target,mode){
+
+  smin = 2
+  smax = N*1.2
+  sdf = seq(smin,smax , by = (smax-smin)/30)
+  power =  array(NA, dim = c(length(sdf)))
+  
+  for ( i in 1:length(sdf)){
+    t = BF_bound_10(D ,sdf[i],model ,location ,scale  ,dff ,hypothesis )
+    power[i] = switch(de_an_prior,
+                      "1" = pro_compelling_BF(t,sdf[i],model  ,location  ,scale,dff, hypothesis),
+                      "0" = pro_compelling_BF(t,sdf[i],model_d  ,location_d  ,scale_d,dff_d, hypothesis))
+      
+      
+  }
+  plot(sdf+1,power,type="l",main = "",frame.plot = FALSE,xlab = "Sample size", ylab = "Probability of True positive evidence",xlim = c(1,max(sdf)), 
+       ylim = c(0,1) )
+  if ( mode == 1 ){
+    abline(v = N, col = "gray", lty = 2)
+    
+    # Add horizontal dotted gray line at y = 5
+    abline(h = target, col = "gray", lty = 2)
+  }
   
 }
