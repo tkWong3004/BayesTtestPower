@@ -13,13 +13,14 @@ NumericVector dnct(const NumericVector x, const double df, const NumericVector n
   R_xlen_t nx = x.length();
   R_xlen_t nncp = ncp.length();
   
+  // Result vector
   NumericVector y(std::max(nx, nncp));
   
-  // Single x and multiple ncp
+  // If nx is 1, then only a single x needs to be evaluated with all ncp
   if (nx == 1) {
     double single_x = x[0];
     for (R_xlen_t i = 0; i < nncp; ++i) {
-      non_central_t dist(df, ncp[i]);
+      non_central_t dist(df, ncp[i]);  // Create distribution once per ncp
       try {
         double pdf_value = pdf(dist, single_x);
         y[i] = std::isnan(pdf_value) ? 0.0 : pdf_value;  // Replace NaN with 0
@@ -28,10 +29,10 @@ NumericVector dnct(const NumericVector x, const double df, const NumericVector n
       }
     }
   }
-  // Single ncp and multiple x
+  // If nncp is 1, then we evaluate the single ncp for all x values
   else if (nncp == 1) {
     double single_ncp = ncp[0];
-    non_central_t dist(df, single_ncp);
+    non_central_t dist(df, single_ncp);  // Create distribution once per ncp
     for (R_xlen_t i = 0; i < nx; ++i) {
       try {
         double pdf_value = pdf(dist, x[i]);
@@ -41,10 +42,10 @@ NumericVector dnct(const NumericVector x, const double df, const NumericVector n
       }
     }
   }
-  // Multiple x and multiple ncp with the same length
+  // If nx and nncp are the same, we calculate pdf values for each corresponding pair of x and ncp
   else if (nx == nncp) {
     for (R_xlen_t i = 0; i < nx; ++i) {
-      non_central_t dist(df, ncp[i]);
+      non_central_t dist(df, ncp[i]);  // Create distribution once per ncp
       try {
         double pdf_value = pdf(dist, x[i]);
         y[i] = std::isnan(pdf_value) ? 0.0 : pdf_value;  // Replace NaN with 0
@@ -58,4 +59,3 @@ NumericVector dnct(const NumericVector x, const double df, const NumericVector n
   
   return y;
 }
-
