@@ -9,7 +9,30 @@ tstude <- function(t, location = 0, scale = sqrt(2)/2, df = 1) {
   #dnct((t-location)/scale,df,ncp = 0)/scale
 }
 
-
+dnct <- function(t, df, ncp) {
+  x <- numeric(length(t))  # Pre-allocate the output vector
+  
+  if (length(t) == 1) {
+    # Single t, multiple ncp
+    for (i in 1:length(ncp)) {
+      x[i] <- dnct_n(t, df, ncp[i])
+    }
+  } else if (length(ncp) == 1) {
+    # Multiple t, single ncp
+    for (i in 1:length(t)) {
+      x[i] <- dnct_n(t[i], df, ncp)
+    }
+  } else if (length(t) == length(ncp)) {
+    # Multiple t and ncp with same length
+    for (i in 1:length(t)) {
+      x[i] <- dnct_n(t[i], df, ncp[i])
+    }
+  } else {
+    stop("Lengths of t and ncp must either be the same or one of them must be 1.")
+  }
+  
+  return(x)
+}
 # likelihood of t under the null 
 ml_H0 <-function(t,df){
   dnct(t,df,ncp = 0)
