@@ -22,21 +22,26 @@ NumericVector dnct(const NumericVector x, const double df, const NumericVector n
     for (R_xlen_t i = 0; i < nncp; ++i) {
       try {
         non_central_t dist(df, ncp[i]);
-        y[i] = std::isnan(pdf(dist, single_x)) ? 0.0 : pdf(dist, single_x);
-      } catch (...) {
-        y[i] = 0.0; // **Suppresses ALL errors without slowing down**
+        double pdf_value = pdf(dist, single_x);
+        y[i] = std::isnan(pdf_value) ? 0.0 : pdf_value; // Replace NaN with 0
+      } catch (std::exception &e) {
+        // Suppress error message
+        y[i] = 0.0; // Assign 0 on exception
       }
     }
   }
   // Single ncp and multiple x
   else if (nncp == 1) {
+    double single_ncp = ncp[0];
+
     try {
-      non_central_t dist(df, ncp[0]);
+      non_central_t dist(df, single_ncp);
       for (R_xlen_t i = 0; i < nx; ++i) {
-        y[i] = std::isnan(pdf(dist, x[i])) ? 0.0 : pdf(dist, x[i]);
+        double pdf_value = pdf(dist, x[i]);
+        y[i] = std::isnan(pdf_value) ? 0.0 : pdf_value; // Replace NaN with 0
       }
-    } catch (...) {
-      std::fill(y.begin(), y.end(), 0.0); // **Assigns all zeros if a single error occurs**
+    } catch (std::exception &e) {
+      std::fill(y.begin(), y.end(), 0.0); // Assign 0 on exception
     }
   }
   // Multiple x and multiple ncp with the same length
@@ -44,9 +49,10 @@ NumericVector dnct(const NumericVector x, const double df, const NumericVector n
     for (R_xlen_t i = 0; i < nx; ++i) {
       try {
         non_central_t dist(df, ncp[i]);
-        y[i] = std::isnan(pdf(dist, x[i])) ? 0.0 : pdf(dist, x[i]);
-      } catch (...) {
-        y[i] = 0.0; // **Catches errors PER INDEX, keeping other values safe**
+        double pdf_value = pdf(dist, x[i]);
+        y[i] = std::isnan(pdf_value) ? 0.0 : pdf_value; // Replace NaN with 0
+      } catch (std::exception &e) {
+        y[i] = 0.0; // Assign 0 on exception
       }
     }
   } else {
@@ -55,3 +61,4 @@ NumericVector dnct(const NumericVector x, const double df, const NumericVector n
   
   return y;
 }
+
