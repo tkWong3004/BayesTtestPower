@@ -16,44 +16,33 @@ NumericVector dnct(const NumericVector x, const double df, const NumericVector n
   // Result vector
   NumericVector y(std::max(nx, nncp));
   
-  // If nx is 1, then only a single x needs to be evaluated with all ncp
   if (nx == 1) {
+    // Single x, multiple ncp
     double single_x = x[0];
     for (R_xlen_t i = 0; i < nncp; ++i) {
       non_central_t dist(df, ncp[i]);  // Create distribution once per ncp
-      try {
-        double pdf_value = pdf(dist, single_x);
-        y[i] = std::isnan(pdf_value) ? 0.0 : pdf_value;  // Replace NaN with 0
-      } catch (std::exception &e) {
-        y[i] = 0.0;  // Assign 0 on exception
-      }
+      double pdf_value = pdf(dist, single_x);
+      y[i] = std::isnan(pdf_value) ? 0.0 : pdf_value;  // Replace NaN with 0
     }
-  }
-  // If nncp is 1, then we evaluate the single ncp for all x values
+  } 
   else if (nncp == 1) {
+    // Multiple x, single ncp
     double single_ncp = ncp[0];
     non_central_t dist(df, single_ncp);  // Create distribution once per ncp
     for (R_xlen_t i = 0; i < nx; ++i) {
-      try {
-        double pdf_value = pdf(dist, x[i]);
-        y[i] = std::isnan(pdf_value) ? 0.0 : pdf_value;  // Replace NaN with 0
-      } catch (std::exception &e) {
-        y[i] = 0.0;  // Assign 0 on exception
-      }
+      double pdf_value = pdf(dist, x[i]);
+      y[i] = std::isnan(pdf_value) ? 0.0 : pdf_value;  // Replace NaN with 0
     }
-  }
-  // If nx and nncp are the same, we calculate pdf values for each corresponding pair of x and ncp
+  } 
   else if (nx == nncp) {
+    // Multiple x and ncp with the same length
     for (R_xlen_t i = 0; i < nx; ++i) {
       non_central_t dist(df, ncp[i]);  // Create distribution once per ncp
-      try {
-        double pdf_value = pdf(dist, x[i]);
-        y[i] = std::isnan(pdf_value) ? 0.0 : pdf_value;  // Replace NaN with 0
-      } catch (std::exception &e) {
-        y[i] = 0.0;  // Assign 0 on exception
-      }
+      double pdf_value = pdf(dist, x[i]);
+      y[i] = std::isnan(pdf_value) ? 0.0 : pdf_value;  // Replace NaN with 0
     }
-  } else {
+  } 
+  else {
     stop("Lengths of x and ncp must either be the same or one of them must be 1.");
   }
   
