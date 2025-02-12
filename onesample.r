@@ -1,31 +1,3 @@
-find_root <- function(Power_root) {
-  lower <- 2
-  upper <- 200
-  max_upper <- 100000
-  step <- 500  # Step increase for upper bound after 700
-  
-  while (TRUE) {
-    result <- tryCatch({
-      uniroot(Power_root, lower = lower, upper = upper)$root
-    }, error = function(e) NULL)
-    
-    if (!is.null(result)) {
-      return(result)  # Return root if found
-    }
-    
-    # Adjust bounds
-    if (upper >= max_upper) {
-      stop("No root found within the given range")
-    } else if (upper == 200) {
-      lower <- 200
-      upper <- 700
-    } else {
-      lower <- upper
-      upper <- min(upper + step, max_upper)
-    }
-  }
-}
-
 
 # likelihood of non-local prior
 dnlp <-function(delta,mu,ta){
@@ -469,8 +441,7 @@ N_finder<-function(D,target,model,location,scale,dff=1, hypothesis ,
     
     
   }
-  N = find_root(Power_root)
-  #N = uniroot(Power_root,lower = 2,upper =  up)$root
+N = uniroot(Power_root,lower = 2,upper =  up)$root
   return(N)}
 
 
