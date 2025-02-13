@@ -114,7 +114,7 @@ BF_bound_01_two <-function(D , n1,r,model ,location ,scale,dff , hypothesis){
   
   x = uniroot.all(Bound_finding, lower = -20,upper = 20)
   if (length(x) == 0 ){
-    x = "bound cannot be found"
+    x = "no bound is found"
     return(x)
   }
   BF = 1/BF10_two_sample(x , n1,r,model=model,location=location,scale=scale,dff=dff, hypothesis =hypothesis )
