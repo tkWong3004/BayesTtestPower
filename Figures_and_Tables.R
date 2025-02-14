@@ -7,6 +7,7 @@ library(Rcpp)
 library(BH)
 library(bfpwr)
 library(tikzDevice)  
+library(colorspace)
 sourceCpp("boost_noncentralt.cpp", cacheDir = "tmp_cache")
 sourceCpp("pt.cpp", cacheDir = "tmp_cache")               
 source("onesample.r")
@@ -223,11 +224,99 @@ system(paste0("pdflatex ", plot.name, ".tex;
 
 
 ####################### Figure 4 
+# loading the data for the plot
+load("figure4.RData")
+# Colors:
+colors <- qualitative_hcl(3, palette = "Dark 3")
+
+# New Figure:
+plot.name <- "figure4"
+# Part 1/2 - Save to .tex:
+tikz(paste0(plot.name, ".tex"), standAlone = TRUE, width = 1.2*8, height = 1.2*5)
+par(mfrow = c(1, 2), mar = c(4, 5, 1.5, .5))
+# Left panel:
+plot(NULL, xlim = c(0, 150), ylim = c(0, .061),
+     xlab = "", ylab = "", main = "", xaxt = "n", yaxt = "n", frame.plot = FALSE)
+abline(h = .05, lty = 3, col = "gray60")
+lines(n1, alpha[, 1,1], col = colors[1], lwd = 2)
+lines(n1, alpha[, 2,1], col = colors[2],  lwd = 2)
+lines(n1, alpha[, 3,1], col = colors[3],   lwd = 2)
+lines(n1, alpha[, 1,2], col = colors[1], lwd = 2, lty = 2)
+lines(n1, alpha[, 2,2], col = colors[2],  lwd = 2, lty = 2)
+lines(n1, alpha[, 3,2], col = colors[3],   lwd = 2, lty = 2)
+axis(1, seq(0, 150, 30), paste0("$", seq(0, 150, 30), "$"), cex.axis = 1.4)
+axis(2, c(.05, seq(0, .06, .02)), paste0("$", c(.05, seq(0, .06, .02)), "$"),
+     las = 1,cex.axis = 1.4)
+mtext("False Positive Evidence", 2, 3.5, cex = 1.4)
+mtext("Sample size per group $N$", 1, 2.5, cex = 1.4)
+mtext("$\\delta=0$", 3, 0, cex = 1.4)
+
+# Right panel:
+plot(NULL, xlim = c(0, 150), ylim = c(0, 1),
+     xlab = "", ylab = "", main = "", xaxt = "n", yaxt = "n", frame.plot = FALSE)
+lines(n1, f_power, lty = 3, col = "gray60",lwd = 2)
+lines(n1, power[, 1,1], col = colors[1], lwd = 2)
+lines(n1, power[, 2,1], col = colors[2], lwd = 2)
+lines(n1, power[, 3,1], col = colors[3], lwd = 2)
+lines(n1, power[, 1,2], col = colors[1],  lty = 2, lwd = 2)
+lines(n1, power[, 2,2], col = colors[2], lty = 2, lwd = 2)
+lines(n1, power[, 3,2], col = colors[3],  lty = 2, lwd = 2)
+axis(1, seq(0, 150, 30), paste0("$", seq(0, 150, 30), "$"), cex.axis = 1.4)
+axis(2, seq(0, 1, .2), paste0("$", seq(0, 1, .2), "$"), las = 1,cex.axis = 1.4)
+mtext("True Positive Evidence", 2, 3, cex = 1.4)
+mtext("Sample size per group $N$", 1, 2.5, cex = 1.4)
+mtext("$\\delta=.64$", 3, 0, cex = 1.4)
+
+# Legend:
+legend(76, .4, title = "$BF_b$", legend = c(3, 10),
+       lty = c(1, 2),  cex = 1.2, bty = "n", lwd = 2, seg.len = 3, title.adj = .2)
+legend(76, .2, title = "Analysis prior", legend = c("Cauchy(0, .707)", "Normal(0, 1)", "NLP(0, .45)"),
+       col = c(colors[1], colors[2], colors[3]), lty = 1, cex = 1.2, bty = "n", lwd = 2, seg.len = 3, title.adj = .14)
+dev.off()
+
+# Part 2/2 - Create PNG (.tex -> .pdf -> .png -> clean up):
+system(paste0("pdflatex ", plot.name, ".tex;
+       magick -density 300 ", plot.name, ".pdf ", plot.name, ".png;
+       rm *.aux; rm *.log; rm *.tex; rm *.pdf")
+)
+
+################################ generating the data for the plots
+# input
+D = c(3,10)        # decision bound 
+location = 0            # location parameter
+hypothesis = ">"       # the direction of the hypotheses
+scale = c(.707,.1,.45) # scaling parameter
+n1 = seq(2,150,by = 2)  
+r = 1
+model = c("Cauchy","Normal","NLP")
+alpha = array(NA, dim = c(length(n1),length(model),length(D)))
+for (iii in 1:length(D)){
+  for (ii in 1:length(model)){
+    for (i in 1:length(n1)){
+      
+      t = BF_bound_10_two(D[iii] ,n1[i] ,r,model = model[ii] ,location ,scale = scale[ii] ,dff ,hypothesis )
+      alpha[i,ii,iii] = false_positive_evidence_two (t,n1[i],r,model = "Point" ,location = .64 ,scale,dff, hypothesis)
+      
+    }}}
+
+power = array(NA, dim = c(length(n1),length(model),length(D)))
+for (iii in 1:length(D)){
+  for (ii in 1:length(model)){
+    for (i in 1:length(n1)){
+      
+      t = BF_bound_10_two(D[iii] ,n1[i] ,r,model = model[ii] ,location ,scale = scale[ii] ,dff ,hypothesis )
+      power[i,ii,iii] = pro_compelling_BF_two(t,n1[i],r,model = "Point" ,location = .64 ,scale,dff, hypothesis)
+      
+    }}}
+
+f_power = power.t.test(n = n1, delta = .64,sig.level = .05,type = "two.sample", alternative = "one.sided")$power
+save(alpha,power,f_power,n1,  file ="new.RData")
+####################### Figure 5  
 ##  loading the needed information for making the plot
 load("probabilities.RData")
 
-# Figure 4:
-plot.name <- "Figure4"
+# Figure 5:
+plot.name <- "Figure5"
 # Part 1/2 - Save to .tex:
 tikz(paste0(plot.name, ".tex"), standAlone=TRUE, width = 8, height = 5) 
 par(mfrow = c(2, 3),               
@@ -238,7 +327,7 @@ par(mfrow = c(2, 3),
 
 # Top row:
 for (i in 1:3){
-  plot(df + 1, alpha[ , 4, 1, i], 
+  plot(n1, alpha[ , 4, 1, i], 
        xlab = "", ylab = "", main = "", xaxt = "n", yaxt = "n", frame.plot = FALSE, 
        ylim = c(0, .06), 
        type = "l", lty = 1, lwd = 2)
@@ -246,40 +335,51 @@ for (i in 1:3){
   axis(2, seq(0, .06, .02), las = 1,cex.axis = 1.4)
   axis(2,.05,, las = 1,cex.axis = 1.4)
   abline( h = .05, lty = 2, col = "gray60")
-  # mtext("Sample size $N$", 1, 2.5, cex = .8) 
+  # mtext("Sample size per group $N$", 1, 2.5, cex = .8) 
   if (i == 1) mtext("False Positive Evidence", 2, 3, cex = .8)
   if (i == 1) mtext("\\itshape $\\mathcal{H}_1:\\delta\\sim$ Cauchy $(r)$", 3, 0, cex = 1)
   if (i == 2) mtext("\\itshape $\\mathcal{H}_1:\\delta\\sim\\mathcal{N}(0, \\sigma^2_\\delta)$", 3, 0, cex = 1)
   if (i == 3) mtext("\\itshape $\\mathcal{H}_1:\\delta\\sim$ Non-local $(0, \\tau)$", 3, 0, cex = 1)
-  lines(df + 1, alpha[, 3,1,i], col = "blue")
-  lines(df + 1, alpha[, 2,1,i], col = "red")
-  lines(df + 1, alpha[, 1,1,i], col = "green")
-  lines(df + 1, alpha[, 4,2,i], col = "black", lty = 2)
-  lines(df + 1, alpha[, 3,2,i], col = "blue",  lty = 2)
-  lines(df + 1, alpha[, 2,2,i], col = "red",   lty = 2)
-  lines(df + 1, alpha[, 1,2,i], col = "green", lty = 2)
+  lines(n1, alpha[, 3,1,i], col = "blue")
+  lines(n1, alpha[, 2,1,i], col = "red")
+  lines(n1, alpha[, 1,1,i], col = "green")
+  lines(n1, alpha[, 4,2,i], col = "black", lty = 2)
+  lines(n1, alpha[, 3,2,i], col = "blue",  lty = 2)
+  lines(n1, alpha[, 2,2,i], col = "red",   lty = 2)
+  lines(n1, alpha[, 1,2,i], col = "green", lty = 2)
+  if (i == 1) {
+    legend(290, .05, title = "Scaling parameter", legend = c(1,.707,.5,.1),
+           col = c("black","blue","red","green"), lty = 1, cex = 1.2, bty = "n", 
+           lwd = 2, seg.len = 3, title.adj = -0.4,
+           y.intersp = .7,x.intersp = 1)
+    legend(305, .025, title = "$BF_b$", legend = c(3, 10),
+           lty = c(1, 2),  cex = 1.2, bty = "n", lwd = 2, seg.len = 3, title.adj = .4,
+           y.intersp = .7,x.intersp = 1)
+  }
 }
 
 # Bottom row:
 for (i in 1:3){
-  plot(df + 1, power[ , 4, 1, i], 
+  plot(n1, power[ , 4, 1, i], 
        xlab = "", ylab = "", main = "", xaxt = "n", yaxt = "n", frame.plot = FALSE, 
        ylim = c(0, 1), 
        type = "l", lty = 1, lwd = 2)
   axis(1, seq(0, 500, 100),cex.axis = 1.4) 
   axis(2, seq(0, 1, .2), las = 1,cex.axis = 1.4)
-  mtext("Sample size $N$", 1, 2.5, cex = 1) 
+  abline( h = .8, lty = 2, col = "gray60")
+  mtext("Sample size per group $N$", 1, 2.5, cex = 1) 
   if (i == 1) mtext("True Positive Evidence", 2, 3, cex = .8)
   # if (i == 1) mtext("\\itshape $\\mathcal{H}_1:\\delta\\sim$ Cauchy $(r)$", 3, 0, cex = .8)
   # if (i == 2) mtext("\\itshape $\\mathcal{H}_1:\\delta\\sim\\mathcal{N}(0, \\sigma^2_\\delta)$", 3, 0, cex = .8)
   # if (i == 3) mtext("\\itshape $\\mathcal{H}_1:\\delta\\sim$ Non-local $(0, \\tau)$", 3, 0, cex = .8)
-  lines(df + 1, power[, 3,1,i], col = "blue")
-  lines(df + 1, power[, 2,1,i], col = "red")
-  lines(df + 1, power[, 1,1,i], col = "green")
-  lines(df + 1, power[, 4,2,i], col = "black", lty = 2)
-  lines(df + 1, power[, 3,2,i], col = "blue",  lty = 2)
-  lines(df + 1, power[, 2,2,i], col = "red",   lty = 2)
-  lines(df + 1, power[, 1,2,i], col = "green", lty = 2)
+  lines(n1, power[, 3,1,i], col = "blue")
+  lines(n1, power[, 2,1,i], col = "red")
+  lines(n1, power[, 1,1,i], col = "green")
+  lines(n1, power[, 4,2,i], col = "black", lty = 2)
+  lines(n1, power[, 3,2,i], col = "blue",  lty = 2)
+  lines(n1, power[, 2,2,i], col = "red",   lty = 2)
+  lines(n1, power[, 1,2,i], col = "green", lty = 2)
+
 }
 
 dev.off()
@@ -290,39 +390,121 @@ system(paste0("pdflatex ", plot.name, ".tex;
        rm *.aux; rm *.log; rm *.tex; rm *.pdf")
 )
 
+#####################colorblind friendly version
+# Figure 5:
+plot.name <- "Figure5colorfriendly"
+
+colors <- qualitative_hcl(4, palette = "Dark 2")
+
+# Part 1/2 - Save to .tex:
+tikz(paste0(plot.name, ".tex"), standAlone=TRUE, width = 8, height = 5) 
+par(mfrow = c(2, 3),               
+    mar   = c(4, 5, 1.5, .5))
+# i = 1 Cauchy prior
+# i = 2 Normal prior
+# i = 3 Non-local prior 
+
+# Top row:
+for (i in 1:3){
+  plot(n1, alpha[ , 4, 1, i], 
+       xlab = "", ylab = "", main = "", xaxt = "n", yaxt = "n", frame.plot = FALSE, 
+       ylim = c(0, .06), 
+       type = "l", lty = 1, lwd = 2,col = colors[1])
+  axis(1, seq(0, 500, 100),cex.axis = 1.4) 
+  axis(2, seq(0, .06, .02), las = 1,cex.axis = 1.4)
+  axis(2,.05,, las = 1,cex.axis = 1.4)
+  abline( h = .05, lty = 2, col = "gray60")
+  # mtext("Sample size per group $N$", 1, 2.5, cex = .8) 
+  if (i == 1) mtext("False Positive Evidence", 2, 3, cex = .8)
+  if (i == 1) mtext("\\itshape $\\mathcal{H}_1:\\delta\\sim$ Cauchy $(r)$", 3, 0, cex = 1)
+  if (i == 2) mtext("\\itshape $\\mathcal{H}_1:\\delta\\sim\\mathcal{N}(0, \\sigma^2_\\delta)$", 3, 0, cex = 1)
+  if (i == 3) mtext("\\itshape $\\mathcal{H}_1:\\delta\\sim$ Non-local $(0, \\tau)$", 3, 0, cex = 1)
+  lines(n1, alpha[, 3,1,i], col = colors[2])
+  lines(n1, alpha[, 2,1,i], col = colors[3])
+  lines(n1, alpha[, 1,1,i], col = colors[4])
+  lines(n1, alpha[, 4,2,i], col = colors[1], lty = 2)
+  lines(n1, alpha[, 3,2,i], col = colors[2],  lty = 2)
+  lines(n1, alpha[, 2,2,i], col = colors[3],   lty = 2)
+  lines(n1, alpha[, 1,2,i], col = colors[4], lty = 2)
+  if (i == 1) {
+    legend(290, .05, title = "Scaling parameter", legend = c(1,.707,.5,.1),
+           col = colors, lty = 1, cex = 1.2, bty = "n", 
+           lwd = 2, seg.len = 3, title.adj = -0.4,
+           y.intersp = .7,x.intersp = 1)
+    legend(305, .025, title = "$BF_b$", legend = c(3, 10),
+           lty = c(1, 2),  cex = 1.2, bty = "n", lwd = 2, seg.len = 3, title.adj = .4,
+           y.intersp = .7,x.intersp = 1)
+  }
+  
+
+  
+}
+
+
+# Bottom row:
+for (i in 1:3){
+  plot(n1, power[ , 4, 1, i], 
+       xlab = "", ylab = "", main = "", xaxt = "n", yaxt = "n", frame.plot = FALSE, 
+       ylim = c(0, 1), 
+       type = "l", lty = 1, lwd = 2,col = colors[1])
+  axis(1, seq(0, 500, 100),cex.axis = 1.4) 
+  axis(2, seq(0, 1, .2), las = 1,cex.axis = 1.4)
+  abline( h = .8, lty = 2, col = "gray60")
+  mtext("Sample size per group $N$", 1, 2.5, cex = 1) 
+  if (i == 1) mtext("True Positive Evidence", 2, 3, cex = .8)
+  # if (i == 1) mtext("\\itshape $\\mathcal{H}_1:\\delta\\sim$ Cauchy $(r)$", 3, 0, cex = .8)
+  # if (i == 2) mtext("\\itshape $\\mathcal{H}_1:\\delta\\sim\\mathcal{N}(0, \\sigma^2_\\delta)$", 3, 0, cex = .8)
+  # if (i == 3) mtext("\\itshape $\\mathcal{H}_1:\\delta\\sim$ Non-local $(0, \\tau)$", 3, 0, cex = .8)
+  lines(n1, power[, 3,1,i], col = colors[2])
+  lines(n1, power[, 2,1,i], col = colors[3])
+  lines(n1, power[, 1,1,i], col = colors[4])
+  lines(n1, power[, 4,2,i], col = colors[1], lty = 2)
+  lines(n1, power[, 3,2,i], col = colors[2],  lty = 2)
+  lines(n1, power[, 2,2,i], col = colors[3],   lty = 2)
+  lines(n1, power[, 1,2,i], col = colors[4], lty = 2)
+}
+
+dev.off()
+
+# Part 2/2 - Create PNG (.tex -> .pdf -> .png -> clean up):
+system(paste0("pdflatex ", plot.name, ".tex; 
+       magick -density 300 ", plot.name, ".pdf ", plot.name, ".png; 
+       rm *.aux; rm *.log; rm *.tex; rm *.pdf")
+)
 
 ## the information from "probabilities.RData" is generated using the following codes:
 # input
 D = c(10,3)             # decision bound 
 location = 0            # location parameter
-hypothesis = "!="       # the direction of the hypotheses
+hypothesis = ">"       # the direction of the hypotheses
 scale = c(.1,.5,.707,1) # scaling parameter
-
+n1 = seq(2,500,by = 5)  
+r = 1
+df = n1+n2*r -2
 #############################################
-df = seq(2,500,by = 5)  
 dff = 1
 model = c("Cauchy","Normal","NLP")
 title = c(bquote("H"[1]~":"~delta~"~ Cauchy(r)"),
           bquote("H"[1]~":"~delta~"~ Normal(0,"~sigma[delta]^2~")"),
           bquote("H"[1]~":"~delta~"~ Non-local(0,"~tau~")"))
-alpha = array(NA, dim = c(length(df),length(scale),length(D),length(model)))
+alpha = array(NA, dim = c(length(n1),length(scale),length(D),length(model)))
 for(iv in 1:length(model)){
   for(iii in 1:length(D)){
     for(ii in 1:length(scale)){
-      for ( i in 1:length(df)){
-        t = BF_bound_10(D[iii] ,df[i] ,model[iv] ,location ,scale[ii] ,dff ,hypothesis )
-        alpha[i,ii,iii,iv] = false_positive_evidence (t,df[i],model[iv] ,location ,scale[ii],dff, hypothesis)
+      for ( i in 1:length(n1)){
+        t = BF_bound_10_two(D[iii] ,n1[i] ,r,model[iv] ,location ,scale[ii] ,dff ,hypothesis )
+        alpha[i,ii,iii,iv] = false_positive_evidence_two (t,n1[i],r,model[iv] ,location ,scale[ii],dff, hypothesis)
       }}}}
 
-power = array(NA, dim = c(length(df),length(scale),length(D),length(model)))
+power = array(NA, dim = c(length(n1),length(scale),length(D),length(model)))
 for(iv in 1:length(model)){
   for(iii in 1:length(D)){
     for(ii in 1:length(scale)){
-      for ( i in 1:length(df)){
-        bound = BF_bound_10(D[iii], df[i],model[iv] ,location ,scale[ii],dff , hypothesis)
-        power[i,ii,iii,iv] = pro_compelling_BF(bound,df[i],model[iv] ,location ,scale[ii],dff , hypothesis )
+      for ( i in 1:length(n1)){
+        bound = BF_bound_10_two(D[iii] ,n1[i] ,r,model[iv] ,location ,scale[ii] ,dff ,hypothesis )
+        power[i,ii,iii,iv] = pro_compelling_BF_two(bound,n1[i],r,model[iv] ,location ,scale[ii],dff , hypothesis )
       }}}}
-save(alpha,power,title,df,  file ="probabilities.RData")
+save(alpha,power,title,n1,  file ="probabilities.RData")
 
 
 ####################### Table 1 & 2
