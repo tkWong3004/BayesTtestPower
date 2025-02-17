@@ -1,5 +1,5 @@
 # On a Generalizable Approach for Sample Size Determination in Bayesian t Tests 
-This repository contains codes for running the Shiny app:
+This repository contains codes for running the Shiny app (https://tkwong3004.shinyapps.io/BayesTtestPower/):
 
   `app.r` The R script of the app.
 
@@ -24,6 +24,8 @@ This repository relies on the following R packages:
 `BH` version ‘1.84.0.0’: A header-only package that provides the Boost C++ libraries.
 
 # How to run the shiny app locally?
+
+Users are recommended to run the app locally as it would reduce the computational time. 
  
 1.  Download and put all the files `app.r` `onesample.r` , `twosample.r`, `boost_noncentralt.cpp`  and `pt.cpp` in the same working directory.
    
